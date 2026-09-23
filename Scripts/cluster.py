@@ -76,7 +76,7 @@ def top_pairs(Z, names, k=25):
         print(f"{1 - d:6.3f}  {size:3d}  {x}  <->  {y}")
 
 CITY = "Dallas"
-OUT_PATH = rf'C:\Users\vince\Documents\GitHub\pdf-embedding\Outputs\{CITY}\dump.npy'
+OUT_PATH = rf'C:\Users\vince\Documents\GitHub\CIPDB-Embedding\Outputs\{CITY}\dump.npy'
 X     = np.load(OUT_PATH, mmap_mode='r')
 names = np.load(OUT_PATH.replace('.npy', '_names.npy'))
 years = np.load(OUT_PATH.replace('.npy', '_years.npy'))   # optional

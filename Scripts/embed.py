@@ -13,10 +13,10 @@ import scipy.cluster.hierarchy as shc
 import os
 from dotenv import load_dotenv
 
-CITY = "Dallas"
+CITY = "San-Diego"
 
 IN_PATH = rf"C:\Users\vince\Documents\GitHub\CIPBD\{CITY}\CSV\\"
-OUT_PATH = rf"C:\Users\vince\Documents\GitHub\pdf-embedding\Outputs\{CITY}\dump.npy"
+OUT_PATH = rf"C:\Users\vince\Documents\GitHub\CIPBD-Embedding\Outputs\{CITY}\dump.npy"
 
 load_dotenv()
 API_KEY = os.getenv('API_KEY')
@@ -63,6 +63,7 @@ def cluster():
 fc = len(os.listdir(IN_PATH))
 
 for year in range(2026-fc,2026):
+    print(year)
     embed(year)
 
 assert len(vecs) == len(names) == len(years), (len(vecs), len(names), len(years))

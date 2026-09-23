@@ -14,7 +14,7 @@ sys.setrecursionlimit(100_000)
 CITY = "Dallas"
 OUT_PATH = os.environ.get(
     "DUMP_PATH",
-    rf"C:\Users\vince\Documents\GitHub\pdf-embedding\Outputs\{CITY}\dump.npy")
+    rf"C:\Users\vince\Documents\GitHub\CIPBD-Embedding\Outputs\{CITY}\dump.npy")
 DEDUPE = True                      # collapse repeated names before clustering
 
 app = Flask(__name__)
