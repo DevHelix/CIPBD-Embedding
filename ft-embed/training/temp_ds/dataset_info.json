@@ -1,0 +1,64 @@
+{
+  "citation": "",
+  "description": "",
+  "features": {
+    "project_name": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "project_id": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "cip_year": {
+      "dtype": "int32",
+      "_type": "Value"
+    },
+    "department": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "project_type": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "previous_appropriations": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "project_total": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "plan_0": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "plan_1": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "plan_2": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "plan_3": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "plan_4": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "plan_5": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "plan_6": {
+      "dtype": "int64",
+      "_type": "Value"
+    }
+  },
+  "homepage": "",
+  "license": ""
+}
