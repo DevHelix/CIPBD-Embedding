@@ -4,39 +4,52 @@ import csv
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from sklearn.metrics.pairwise import cosine_similarity
+from collections import defaultdict
 
 TRAIN_DIR = r'C:\Users\vince\Documents\GitHub\CIPBD-Embedding\ft-embed\training'
 
 CITY = 'Dallas'
-CSV_DIR = rf'C:\Users\vince\Documents\GitHub\CIPBD\{CITY}\CSV\\'
+CSV_DIR = rf'C:\Users\vince\Documents\GitHub\CIPBD\{CITY}\CSV\\' # input directory here
 OUT_DIR = rf'C:\Users\vince\Documents\GitHub\CIPBD-Embedding\Outputs\{CITY}\\'
 
 model = SentenceTransformer(rf"{TRAIN_DIR}\cip-model\final")
-def vectorize():
+def vectorize(): # produces vecs.npy file
     
+    rows = []
     names = []
-    years = []
+    fieldnames = []
     for file in os.listdir(CSV_DIR):
         file_dir = os.path.join(CSV_DIR,file)
         with open(file_dir, newline="", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
-
+            fieldnames = reader.fieldnames
             for row in reader:
                 if row['project_name'] != '':
+                    rows.append(row)
                     names.append(row['project_name'])
-                    years.append(row['cip_year'])
                     
     vecs  = model.encode(names, normalize_embeddings=True)
 
-    np.save(os.path.join(OUT_DIR,'names.npy'), np.array(names), allow_pickle=False)
     np.save(os.path.join(OUT_DIR,'vecs.npy'), np.array(vecs), allow_pickle=False)
-    np.save(os.path.join(OUT_DIR,'years.npy'), np.array(years), allow_pickle=False)
+    with open(os.path.join(OUT_DIR, 'rows.csv'),mode='w',newline='',encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, restval='', extrasaction='ignore')
+        
+        writer.writeheader()  # Writes the header row
+        writer.writerows(rows)  # Writes all data rows
 
-    return vecs, names, years
+    return vecs
 
-vectorize()
+#vectorize()
 
-vecs, names, years = np.load(os.path.join(OUT_DIR,'vecs.npy')), np.load(os.path.join(OUT_DIR,'names.npy')), np.load(os.path.join(OUT_DIR,'years.npy'))
+vecs = np.load(os.path.join(OUT_DIR,'vecs.npy'))
+vecs = np.load(os.path.join(OUT_DIR, 'vecs.npy'))
+
+with open(os.path.join(OUT_DIR, 'rows.csv'), mode='r', newline='', encoding='utf-8-sig') as f:
+    rows = list(csv.DictReader(f))
+
+names = [r['project_name'] for r in rows]
+years = [r['cip_year'] for r in rows]
+pid   = [r.get('project_id', '') for r in rows]
 
 def nearest():
     nn = NearestNeighbors(metric='cosine').fit(vecs)
@@ -51,23 +64,17 @@ def nearest():
     pairs.sort(key=lambda t: -t[2])
     print(pairs[:10])
 
-def compare(pn, year, k=7):
+def compare(pn, k=7):
     print(f"Input: {pn}")
     q = model.encode(pn, normalize_embeddings=True)
     sims = vecs @ q                                
     order = np.argsort(-sims)[:k]
-    return [(f'{pn} | {year}', f'{str(names[i])} | {years[i]}', round(float(sims[i]),4)) for i in order]
+    return [
+            rows[i] for i in order
+        ]
 
-def te(pn):
-    q = model.encode(pn, normalize_embeddings=True)
-    for i,v in enumerate(names):
-        
-        if "Flood Management Area" in v:
-            print(v)
-            print(years[i])
+count = defaultdict(int)
+# sim = compare("Flood Management Area -  Major Maintenance (Bar X, Baypoint ")
+# for row in sim:
+#     count[row['project_id']] += 1
 
-#te("Flood Management Area -  Major Maintenance (Bar X, Baypoint ")
-
-sim = compare("Flood Management Area -  Major Maintenance (Bar X, Baypoint ", 2017)
-for i in sim:
-    print(i)
