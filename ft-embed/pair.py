@@ -6,6 +6,7 @@ import pandas as pd
 import pickle
 from collections import defaultdict
 import itertools
+import re
 from rapidfuzz import fuzz
 
 from sentence_transformers import (
@@ -19,9 +20,11 @@ CITY = 'Dallas'
 CSV_DIR = rf'C:\Users\vince\Documents\GitHub\CIPBD\{CITY}\CSV\\'
 TRAIN_DIR = r'C:\Users\vince\Documents\GitHub\CIPBD-Embedding\ft-embed\training'
 
-class pair:
-    def __init__(self):
-
+class loss_pairing:
+    def __init__(self, csv_dir=None, train_dir=None):
+        # the interface passes the folder chosen in the picker
+        self.csv_dir   = csv_dir or CSV_DIR
+        self.train_dir = train_dir or TRAIN_DIR
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
         self.guide = SentenceTransformer("all-MiniLM-L6-v2")
         
@@ -45,7 +48,7 @@ class pair:
             return (v or '').strip()
 
         def t(file):
-            file_dir = os.path.join(CSV_DIR,file)
+            file_dir = os.path.join(self.csv_dir, file)
             with open(file_dir, newline="", encoding="utf-8-sig") as f:
                 reader = csv.DictReader(f)
             
@@ -73,7 +76,9 @@ class pair:
 
                     full.append(a)
 
-        for file in os.listdir(CSV_DIR):
+        for file in sorted(os.listdir(self.csv_dir)):
+            if not re.fullmatch(r'\d{4}\.csv', file):
+                continue
             t(file)
 
         features = Features({
@@ -88,31 +93,29 @@ class pair:
         })
 
         ds = Dataset.from_list(full, features=features)
-        ds.save_to_disk(rf'{TRAIN_DIR}\\temp_ds')
+        ds.save_to_disk(os.path.join(self.train_dir, 'temp_ds'))
 
     def section(self):
-        ds = load_from_disk(rf'{TRAIN_DIR}\\temp_ds')
+        ds = load_from_disk(os.path.join(self.train_dir, 'temp_ds'))
         ds_p = pd.DataFrame(ds)
 
         differences = defaultdict(list)
-        counts = ds_p['project_id'].value_counts()
-        for pid, count in counts.items():
-            if not pid or count <= 1:
+        for pid, sub in ds_p[ds_p['project_id'] != ''].groupby('project_id', sort=False):
+            if len(sub) <= 1:
                 continue
-            sub = ds_p[ds_p['project_id'] == pid]   
             for col in ds_p.columns:
                 vals = sub[col].tolist()
                 if vals.count(vals[0]) != len(vals):
                     differences[pid].append((col, sorted(set(vals))))
 
         #print(differences) # {id : (column_name,[value of column of row w/ same id])}
-        pickle.dump(differences, open(rf'{TRAIN_DIR}\\differences.pkl', "wb"))
+        pickle.dump(differences, open(os.path.join(self.train_dir, 'differences.pkl'), "wb"))
 
     def form_data(self):
         anchor = []
         positive = []
 
-        diff = pickle.load(open(rf'{TRAIN_DIR}\\differences.pkl', "rb"))
+        diff = pickle.load(open(os.path.join(self.train_dir, 'differences.pkl'), "rb"))
         for id,cols in diff.items():
             names = dict(cols).get('project_name')
             if not names:
@@ -139,7 +142,7 @@ class pair:
             margin=0.1
         )
         args = SentenceTransformerTrainingArguments(
-            output_dir=rf'{TRAIN_DIR}/cip-model',
+            output_dir=os.path.join(self.train_dir, 'cip-model'),
             num_train_epochs=3,
             per_device_train_batch_size=32,
             learning_rate=2e-5,
@@ -156,4 +159,5 @@ class pair:
         )
 
         trainer.train()
-        self.model.save_pretrained(rf'{TRAIN_DIR}/cip-model/final')
+        self.model.save_pretrained(os.path.join(self.train_dir, 'cip-model', 'final'))
+        print("Training completed")
