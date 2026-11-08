@@ -1,0 +1,13 @@
+- add mass write functionality, i.e write all rows that have score >= 0.7
+
+add fixture modification, i.e. instead of comparing ID's to similar names, we can compare ID's 
+to similar description, or names to similar description
+
+add embedding/training creating/loading safeguards, i.e. provide a warning and confirmation for 
+existing weight directories
+
+create 2 tiers of ID's, sub ID
+
+- preserve columns for mass writing, new column in old csv called identifier for modified data
+
+stress test off of descriptions, start experimenting and create a benchmark script

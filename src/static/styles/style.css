@@ -1,0 +1,7 @@
+.log            { font: 12px ui-monospace, Consolas, monospace; padding: 1px 0 }
+.log--yield     { color: #8a6d00 }
+.log--error     { color: #c0392b }
+
+header {
+    font-weight: bold;
+}

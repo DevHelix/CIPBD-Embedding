@@ -1,0 +1,29 @@
+# ── data: keep the folders, ignore the contents ───────────────────────────
+data/outputs/*
+!data/outputs/.gitkeep
+
+data/weights/*
+!data/weights/.gitkeep
+
+# machine-specific absolute paths chosen by the folder picker
+data/config.json
+
+# ── generated artefacts, wherever they land ───────────────────────────────
+*.npy
+*.pkl
+*.arrow
+*.bak
+*.csv.bak
+
+# ── python ────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# ── editor / OS ───────────────────────────────────────────────────────────
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

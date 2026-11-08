@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CIPEM</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'styles/style.css') }}">
+
+</head>
+<body>
+    <div class="partition" id="topbar">
+        <header>CIPEM</header>
+        <button id="train">Train</button>
+        <button id="embed">Embed</button>
+        <button id="review">Review</button>
+    </div>
+    <div class="partition" id="content">
+        <div class="container active" id="trainCont">
+            <div class="card" id="folder-picker">
+                <div class="row pick" data-key="csv_dir">
+                    <button class="picker">Choose a CSV Path</button>
+                    <label>—</label>
+                </div>
+            </div>
+            <div class="card console" id="run-train">
+                <div class="row">
+                    <label>Choose an Anchor column:</label>
+                    <select id="chooseAnchor">
+                        <option value="project_id">project ID</option>
+                        <option value="project_id">project Description</option>
+                    </select> 
+                </div>
+                <button id="trainBtn">Train</button>
+                <div class="row">
+                    <input type="checkbox" id="writeDiagnosis"></button>
+                    <label>Write Diagnosis (loss pairing .csv)</label>
+                </div>
+            </div>
+        </div>
+        <div class="container" id="embedCont">
+            <div class="card console" id="run-embed">
+                
+            </div>
+        </div>
+        <div class="container" id="reviewCont">
+            <div id="rev-div">
+
+            </div>
+        </div>
+    </div>
+    <div class="partition" id="log">
+
+    </div>
+<script src="{{ url_for('static', filename='picker.js') }}" defer></script>
+<script src="{{ url_for('static', filename='vec.js') }}" defer></script>
+<script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
+</html>
