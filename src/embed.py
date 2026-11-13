@@ -1,4 +1,4 @@
-import csv, math, os, re, shutil
+import csv, math, os, re
 from collections import defaultdict
 
 import numpy as np
@@ -8,6 +8,8 @@ try:                                     # optional: falls back to string distan
 except ImportError:                      # pragma: no cover
     SentenceTransformer = None
 from rapidfuzz import fuzz
+
+import writeback
 
 YEAR_FILE = re.compile(r"^\d{4}\.csv$")
 DEFAULT_WEIGHTS = {"sim": 0.60, "money": 0.20, "dept": 0.10, "year": 0.10}
@@ -169,35 +171,85 @@ class VecStore:
         return out, margin
 
     # -------------------------------------------------------------- editing
-    def assign(self, row_index, pid):
-        """Set project_id on one row and rewrite that row's source CSV."""
-        row = self.rows[row_index]
-        row["project_id"] = pid
-        row["_pid"] = pid
-        self._rewrite(row["_file"])
+    def assign(self, row_index, pid, how="manual", score=None):
+        """Set project_id on one row and write it to its source CSV.
+
+        Raises RuntimeError if the row could not be written (e.g. the file was
+        edited on disk since load_rows()).
+        """
+        res = self.assign_many([(row_index, pid, writeback.mark_value(how, score))])
+        if res["skipped"]:
+            raise RuntimeError(res["skipped"][0]["reason"])
+        return self.rows[row_index]
+
+    def assign_many(self, items):
+        """Write many ids at once; each touched CSV is rewritten exactly once.
+
+        items: iterable of (row_index, pid, mark), mark from writeback.mark_value().
+        Rows that the write skipped keep their old id in memory too.
+        Returns writeback.write_changes()'s report.
+        """
+        staged = {}
+        for i, pid, mark in items:
+            row = self.rows[i]
+            c = writeback.Change(row["_file"], row["_line"], str(pid).strip(),
+                                 mark, row.get("project_name"))
+            staged[(c.file, c.row)] = (row, c)
+
+        res = writeback.write_changes(self.csv_dir, [c for _, c in staged.values()])
+
+        bad = {(s["file"], s["row"]) for s in res["skipped"]}
+        for key, (row, c) in staged.items():
+            if key not in bad:
+                row["project_id"] = row["_pid"] = c.pid
+                row[writeback.MARK_COL] = c.mark
         self._index()
-        return row
+        return res
 
-    def _rewrite(self, fn):
-        path = os.path.join(self.csv_dir, fn)
-        backup = path + ".bak"
-        if not os.path.exists(backup):              # one backup per file, once
-            shutil.copy2(path, backup)
+    def propose(self, threshold=0.7, dept=None):
+        """Top candidate for every orphan whose score >= threshold. Writes nothing.
 
-        fields = self.fields_of[fn]
-        if "project_id" not in fields:              # the early books have no such
-            at = fields.index("project_name") + 1 if "project_name" in fields \
-                 else len(fields)                   # column; add it rather than
-            fields = fields[:at] + ["project_id"] + fields[at:]   # silently drop
-            self.fields_of[fn] = fields
+        Two orphans from the same year never get the same id: the higher score
+        wins and the other is left for manual review (counted in 'conflicts').
+        Returns {'considered', 'conflicts', 'proposals': [{'i', 'name', 'year',
+        'department', 'file', 'pid', 'score', 'margin'}, ...]} best first.
+        """
+        considered, picks = 0, []
+        for r in self.orphans:
+            if dept and r.get("department") != dept:
+                continue
+            considered += 1
+            cands, margin = self.candidates(r, k=2)
+            if cands and cands[0]["score"] >= threshold:
+                picks.append({"i": r["_i"], "name": r["project_name"],
+                              "year": r["_year"], "department": r.get("department", ""),
+                              "file": r["_file"], "pid": cands[0]["pid"],
+                              "score": cands[0]["score"], "margin": margin})
+        picks.sort(key=lambda p: -p["score"])
+        taken, out = set(), []
+        for p in picks:
+            if (p["pid"], p["year"]) not in taken:
+                taken.add((p["pid"], p["year"]))
+                out.append(p)
+        return {"considered": considered, "conflicts": len(picks) - len(out),
+                "proposals": out}
 
-        rows = sorted((r for r in self.rows if r["_file"] == fn),
-                      key=lambda r: r["_line"])
-        with open(path, "w", newline="", encoding="utf-8") as f:
-            w = csv.DictWriter(f, fieldnames=fields,
-                               restval="", extrasaction="ignore")
-            w.writeheader()
-            w.writerows(rows)
+    def auto_assign(self, threshold=0.7, dept=None, dry_run=False):
+        """propose() and then write every proposal, marked 'auto <score>'.
+
+        With dry_run=True nothing is written; 'written' is what would be.
+        Returns propose()'s keys plus 'written', 'files', 'skipped'.
+        """
+        plan = self.propose(threshold, dept)
+        if dry_run:
+            return {**plan, "written": len(plan["proposals"]),
+                    "files": sorted({p["file"] for p in plan["proposals"]}),
+                    "skipped": []}
+        res = self.assign_many(
+            (p["i"], p["pid"], writeback.mark_value("auto", p["score"]))
+            for p in plan["proposals"])
+        return {**plan, "written": res["written"], "files": res["files"],
+                "skipped": res["skipped"]}
 
     def stats(self):
         return {"rows": len(self.rows), "anchored": len(self.anchored),

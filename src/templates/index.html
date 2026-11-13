@@ -13,6 +13,7 @@
         <button id="train">Train</button>
         <button id="embed">Embed</button>
         <button id="review">Review</button>
+        <button id="clusters">Clusters</button>
     </div>
     <div class="partition" id="content">
         <div class="container active" id="trainCont">
@@ -47,12 +48,16 @@
 
             </div>
         </div>
+        <div class="container" id="clustersCont">
+            <div id="clu-div"></div>
+        </div>
     </div>
     <div class="partition" id="log">
 
     </div>
 <script src="{{ url_for('static', filename='picker.js') }}" defer></script>
 <script src="{{ url_for('static', filename='vec.js') }}" defer></script>
+<script src="{{ url_for('static', filename='clusters.js') }}" defer></script>
 <script src="{{ url_for('static', filename='app.js') }}" defer></script>
 </body>
 </html>

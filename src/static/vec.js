@@ -159,7 +159,7 @@ const Vec = (() => {
 
         const grid = el('div', 'vec-grid');
         const toolPanel = el('div', 'toolPanel');
-        toolPanel.append(elWeights,elWrite);
+        toolPanel.append(elWeights, elWrite);
 
         grid.append(elQueue, elDetail, toolPanel);
         root.append(bar, grid);

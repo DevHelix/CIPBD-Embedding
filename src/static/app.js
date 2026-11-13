@@ -5,6 +5,8 @@ Picker.mount('#folder-picker', {
 Vec.mount({embed: '#run-embed', review: '#rev-div'},
     {onLog: (msg, lvl) => logsWrite(msg, lvl)});
 
+Clu.mount('#clu-div', {onLog: (msg, lvl) => logsWrite(msg, lvl)});
+
 const logs     = document.getElementById("log");
 const trainBtn = document.getElementById("trainBtn");
 
